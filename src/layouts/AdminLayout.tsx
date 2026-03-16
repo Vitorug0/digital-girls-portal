@@ -6,8 +6,7 @@ import {
   SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar,
 } from '@/components/ui/sidebar';
 import { NavLink } from '@/components/NavLink';
-import { LayoutDashboard, BookOpen, LogOut, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { LayoutDashboard, BookOpen, ArrowLeft } from 'lucide-react';
 
 const items = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
@@ -17,7 +16,6 @@ const items = [
 function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const location = useLocation();
 
   return (
     <Sidebar collapsible="icon">
@@ -32,7 +30,7 @@ function AdminSidebar() {
             <h2 className="font-heading font-bold text-sidebar-foreground text-lg">Admin</h2>
           )}
         </div>
-        <SidebarGroup defaultOpen>
+        <SidebarGroup>
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

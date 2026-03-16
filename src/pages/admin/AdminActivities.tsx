@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
-import { Activity, ActivityType } from '@/types';
+import { Activity, ActivityType, ActivityStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,23 +15,49 @@ import { Navigate, Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Users } from 'lucide-react';
 import { format } from 'date-fns';
 
+interface FormData {
+  title: string;
+  description: string;
+  type: ActivityType;
+  start_date: string;
+  end_date: string;
+  location: string;
+  total_slots: number;
+  available_slots: number;
+  status: ActivityStatus;
+  created_by: string;
+}
+
 export default function AdminActivities() {
   const { user, isAdmin } = useAuth();
   const { activities, addActivity, updateActivity, deleteActivity, getEffectiveStatus } = useData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Activity | null>(null);
+  const [form, setForm] = useState<FormData>({
+    title: '', description: '', type: 'oficina', start_date: '', end_date: '',
+    location: '', total_slots: 30, available_slots: 30, status: 'aberta', created_by: user?.id || '',
+  });
 
   if (!user || !isAdmin) return <Navigate to="/" />;
 
-  const emptyForm = {
-    title: '', description: '', type: 'oficina' as ActivityType, start_date: '', end_date: '',
-    location: '', total_slots: 30, available_slots: 30, status: 'aberta' as const, created_by: user.id,
+  const openNew = () => {
+    setEditing(null);
+    setForm({
+      title: '', description: '', type: 'oficina', start_date: '', end_date: '',
+      location: '', total_slots: 30, available_slots: 30, status: 'aberta', created_by: user.id,
+    });
+    setDialogOpen(true);
   };
 
-  const [form, setForm] = useState(emptyForm);
-
-  const openNew = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };
-  const openEdit = (a: Activity) => { setEditing(a); setForm({ ...a }); setDialogOpen(true); };
+  const openEdit = (a: Activity) => {
+    setEditing(a);
+    setForm({
+      title: a.title, description: a.description, type: a.type, start_date: a.start_date,
+      end_date: a.end_date, location: a.location, total_slots: a.total_slots,
+      available_slots: a.available_slots, status: a.status, created_by: a.created_by,
+    });
+    setDialogOpen(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +141,7 @@ export default function AdminActivities() {
                 {editing && (
                   <div className="space-y-2">
                     <Label>Status</Label>
-                    <Select value={form.status} onValueChange={v => setForm({ ...form, status: v as any })}>
+                    <Select value={form.status} onValueChange={v => setForm({ ...form, status: v as ActivityStatus })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="aberta">Aberta</SelectItem>
