@@ -12,15 +12,20 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState<'externo' | 'interno'>('externo');
-  const { register, isLoading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await register(name, email, password, userType);
-    if (success) {
-      toast({ title: 'Conta criada!', description: 'Bem-vinda ao Meninas Digitais.' });
+    setLoading(true);
+    const result = await register(name, email, password, userType);
+    setLoading(false);
+    if (result.success) {
+      toast({ title: 'Conta criada!', description: 'Bem-vinda ao Meninas Digitais. Verifique seu email para confirmar a conta.' });
       navigate('/');
+    } else {
+      toast({ title: 'Erro', description: result.message, variant: 'destructive' });
     }
   };
 
@@ -43,7 +48,7 @@ export default function Register() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
+              <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
             </div>
             <div className="space-y-2">
               <Label>Tipo de usuária</Label>
@@ -59,8 +64,8 @@ export default function Register() {
                 {userType === 'externo' ? 'Participante de atividades do projeto' : 'Membro da equipe Meninas Digitais'}
               </p>
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Criando conta...' : 'Criar conta'}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Criando conta...' : 'Criar conta'}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">

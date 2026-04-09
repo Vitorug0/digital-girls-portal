@@ -1,24 +1,43 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { useData } from '@/contexts/DataContext';
+import { useActivities } from '@/hooks/useActivities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigate } from 'react-router-dom';
 import { BarChart3, BookOpen, Users, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 export default function AdminDashboard() {
   const { user, isAdmin } = useAuth();
-  const { activities, registrations } = useData();
+  const { data: activities = [] } = useActivities();
+
+  const { data: regCounts = [] } = useQuery({
+    queryKey: ['admin-reg-counts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('registrations')
+        .select('activity_id, status')
+        .neq('status', 'cancelada');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user && isAdmin,
+  });
 
   if (!user || !isAdmin) return <Navigate to="/" />;
 
   const totalActivities = activities.length;
-  const totalRegistrations = registrations.filter(r => r.status !== 'cancelada').length;
-  const activeRegistrations = registrations.filter(r => r.status === 'inscrita' || r.status === 'confirmada').length;
+  const totalRegistrations = regCounts.length;
+  const activeRegistrations = regCounts.filter(r => r.status === 'inscrita' || r.status === 'confirmada').length;
+
+  const totalSlots = activities.reduce((s, a) => s + a.total_slots, 0);
+  const availableSlots = activities.reduce((s, a) => s + a.available_slots, 0);
+  const occupancyRate = totalSlots > 0 ? Math.round((1 - availableSlots / totalSlots) * 100) : 0;
 
   const popularActivities = activities
     .map(a => ({
       name: a.title.length > 25 ? a.title.slice(0, 25) + '...' : a.title,
-      inscrições: registrations.filter(r => r.activity_id === a.id && r.status !== 'cancelada').length,
+      inscrições: regCounts.filter(r => r.activity_id === a.id).length,
     }))
     .sort((a, b) => b.inscrições - a.inscrições)
     .slice(0, 5);
@@ -33,7 +52,7 @@ export default function AdminDashboard() {
           { icon: BookOpen, label: 'Atividades', value: totalActivities, color: 'text-primary' },
           { icon: Users, label: 'Inscrições', value: totalRegistrations, color: 'text-secondary' },
           { icon: TrendingUp, label: 'Inscrições Ativas', value: activeRegistrations, color: 'text-status-open' },
-          { icon: BarChart3, label: 'Taxa de Ocupação', value: `${Math.round((1 - activities.reduce((s, a) => s + a.available_slots, 0) / activities.reduce((s, a) => s + a.total_slots, 0)) * 100)}%`, color: 'text-status-full' },
+          { icon: BarChart3, label: 'Taxa de Ocupação', value: `${occupancyRate}%`, color: 'text-status-full' },
         ].map(stat => (
           <Card key={stat.label}>
             <CardContent className="p-6">
