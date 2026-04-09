@@ -1,24 +1,26 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useData } from '@/contexts/DataContext';
+import { useActivity } from '@/hooks/useActivities';
+import { useRegistrations, useUpdateRegistrationStatus } from '@/hooks/useRegistrations';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RegistrationStatusBadge } from '@/components/StatusBadge';
 import { toast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
-import { ArrowLeft, Check, X } from 'lucide-react';
+import { ArrowLeft, Check } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function AdminRegistrations() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
-  const { activities, getActivityRegistrations, updateRegistrationStatus } = useData();
+  const { data: activity } = useActivity(id);
+  const { data: regs = [], isLoading } = useRegistrations(id);
+  const updateStatus = useUpdateRegistrationStatus();
 
   if (!user || !isAdmin) return <Navigate to="/" />;
 
-  const activity = activities.find(a => a.id === id);
-  if (!activity) {
+  if (!activity && !isLoading) {
     return (
       <div className="text-center py-16">
         <p className="text-muted-foreground">Atividade não encontrada.</p>
@@ -27,12 +29,19 @@ export default function AdminRegistrations() {
     );
   }
 
-  const regs = getActivityRegistrations(activity.id);
+  if (!activity) {
+    return <p className="text-muted-foreground text-center py-12">Carregando...</p>;
+  }
+
   const hasStarted = new Date(activity.start_date) <= new Date();
 
-  const markPresent = (regId: string) => {
-    updateRegistrationStatus(regId, 'presente');
-    toast({ title: 'Presença registrada!' });
+  const markPresent = async (regId: string) => {
+    try {
+      await updateStatus.mutateAsync({ registrationId: regId, status: 'presente' });
+      toast({ title: 'Presença registrada!' });
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+    }
   };
 
   return (
@@ -67,14 +76,14 @@ export default function AdminRegistrations() {
               {regs.map((reg, i) => (
                 <TableRow key={reg.id}>
                   <TableCell>{i + 1}</TableCell>
-                  <TableCell className="font-mono text-sm">{reg.user_id}</TableCell>
+                  <TableCell className="font-mono text-sm">{reg.user_id.slice(0, 8)}...</TableCell>
                   <TableCell>{format(new Date(reg.created_at), 'dd/MM/yyyy HH:mm')}</TableCell>
                   <TableCell><RegistrationStatusBadge status={reg.status} /></TableCell>
                   <TableCell className="text-right">
                     {reg.status === 'presente' ? (
                       <span className="text-status-open text-sm font-medium">✓ Presente</span>
                     ) : hasStarted ? (
-                      <Button size="sm" variant="outline" className="gap-1" onClick={() => markPresent(reg.id)}>
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => markPresent(reg.id)} disabled={updateStatus.isPending}>
                         <Check className="h-3.5 w-3.5" /> Marcar
                       </Button>
                     ) : (

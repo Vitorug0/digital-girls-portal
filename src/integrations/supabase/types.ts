@@ -14,16 +14,149 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          available_slots: number
+          created_at: string
+          created_by: string | null
+          description: string
+          end_date: string
+          id: string
+          location: string
+          start_date: string
+          status: string
+          title: string
+          total_slots: number
+          type: string
+        }
+        Insert: {
+          available_slots?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          end_date: string
+          id?: string
+          location?: string
+          start_date: string
+          status?: string
+          title: string
+          total_slots?: number
+          type?: string
+        }
+        Update: {
+          available_slots?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          end_date?: string
+          id?: string
+          location?: string
+          start_date?: string
+          status?: string
+          title?: string
+          total_slots?: number
+          type?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          user_type: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          user_type?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          user_type?: string
+        }
+        Relationships: []
+      }
+      registrations: {
+        Row: {
+          activity_id: string
+          created_at: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registrations_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cancel_registration: {
+        Args: { p_registration_id: string; p_user_id: string }
+        Returns: Json
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      register_for_activity: {
+        Args: { p_activity_id: string; p_user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +283,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const

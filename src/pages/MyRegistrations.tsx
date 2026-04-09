@@ -1,7 +1,8 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { useData } from '@/contexts/DataContext';
+import { useUserRegistrations, useCancelRegistration } from '@/hooks/useRegistrations';
+import { getEffectiveStatus } from '@/hooks/useActivities';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge, TypeBadge, RegistrationStatusBadge } from '@/components/StatusBadge';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -11,15 +12,22 @@ import { Link, Navigate } from 'react-router-dom';
 
 export default function MyRegistrations() {
   const { user } = useAuth();
-  const { getUserRegistrations, cancelRegistration, getEffectiveStatus } = useData();
+  const { data: registrations = [], isLoading } = useUserRegistrations();
+  const cancelMutation = useCancelRegistration();
 
   if (!user) return <Navigate to="/login" />;
 
-  const registrations = getUserRegistrations(user.id);
-
-  const handleCancel = (regId: string) => {
-    cancelRegistration(regId);
-    toast({ title: 'Inscrição cancelada', description: 'Sua vaga foi liberada.' });
+  const handleCancel = async (regId: string) => {
+    try {
+      const result = await cancelMutation.mutateAsync({ registrationId: regId, userId: user.id });
+      toast({
+        title: result.success ? 'Inscrição cancelada' : 'Erro',
+        description: result.message,
+        variant: result.success ? 'default' : 'destructive',
+      });
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+    }
   };
 
   return (
@@ -27,7 +35,9 @@ export default function MyRegistrations() {
       <h1 className="font-heading text-3xl font-bold mb-2">Minhas Inscrições</h1>
       <p className="text-muted-foreground mb-8">Acompanhe suas atividades inscritas</p>
 
-      {registrations.length === 0 ? (
+      {isLoading ? (
+        <p className="text-muted-foreground text-center py-12">Carregando...</p>
+      ) : registrations.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-muted-foreground text-lg mb-4">Você ainda não se inscreveu em nenhuma atividade.</p>
           <Link to="/atividades">
@@ -70,6 +80,7 @@ export default function MyRegistrations() {
                         size="sm"
                         className="gap-1 text-destructive hover:text-destructive"
                         onClick={() => handleCancel(reg.id)}
+                        disabled={cancelMutation.isPending}
                       >
                         <X className="h-4 w-4" /> Cancelar
                       </Button>

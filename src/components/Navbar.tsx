@@ -9,6 +9,11 @@ export function Navbar() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
+
   return (
     <nav className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -19,23 +24,14 @@ export function Navbar() {
           <span className="font-heading font-semibold text-lg hidden sm:block">Meninas Digitais</span>
         </Link>
 
-        {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-6">
-          <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Início
-          </Link>
-          <Link to="/atividades" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Atividades
-          </Link>
+          <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Início</Link>
+          <Link to="/atividades" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Atividades</Link>
           {user && (
-            <Link to="/minhas-inscricoes" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Minhas Inscrições
-            </Link>
+            <Link to="/minhas-inscricoes" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Minhas Inscrições</Link>
           )}
           {isAdmin && (
-            <Link to="/admin" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-              Painel Admin
-            </Link>
+            <Link to="/admin" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">Painel Admin</Link>
           )}
         </div>
 
@@ -45,32 +41,26 @@ export function Navbar() {
               <Link to="/perfil">
                 <Button variant="ghost" size="sm" className="gap-2">
                   <User className="h-4 w-4" />
-                  {user.name.split(' ')[0]}
+                  {user.name?.split(' ')[0] || 'Perfil'}
                 </Button>
               </Link>
-              <Button variant="outline" size="sm" onClick={() => { logout(); navigate('/'); }}>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
               </Button>
             </>
           ) : (
             <>
-              <Link to="/login">
-                <Button variant="ghost" size="sm">Entrar</Button>
-              </Link>
-              <Link to="/cadastro">
-                <Button size="sm">Cadastrar</Button>
-              </Link>
+              <Link to="/login"><Button variant="ghost" size="sm">Entrar</Button></Link>
+              <Link to="/cadastro"><Button size="sm">Cadastrar</Button></Link>
             </>
           )}
         </div>
 
-        {/* Mobile toggle */}
         <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
       </div>
 
-      {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden border-t bg-card p-4 space-y-3">
           <Link to="/" className="block text-sm font-medium py-2" onClick={() => setMobileOpen(false)}>Início</Link>
@@ -87,7 +77,7 @@ export function Navbar() {
                 <Link to="/perfil" onClick={() => setMobileOpen(false)}>
                   <Button variant="ghost" size="sm">Perfil</Button>
                 </Link>
-                <Button variant="outline" size="sm" onClick={() => { logout(); navigate('/'); setMobileOpen(false); }}>Sair</Button>
+                <Button variant="outline" size="sm" onClick={() => { handleLogout(); setMobileOpen(false); }}>Sair</Button>
               </>
             ) : (
               <>

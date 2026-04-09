@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useData } from '@/contexts/DataContext';
+import { useActivities } from '@/hooks/useActivities';
 import { ActivityCard } from '@/components/ActivityCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ const typeFilters: { label: string; value: ActivityType | 'all' }[] = [
 ];
 
 export default function Activities() {
-  const { activities } = useData();
+  const { data: activities = [], isLoading } = useActivities();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<ActivityType | 'all'>('all');
 
@@ -58,7 +58,9 @@ export default function Activities() {
         </div>
       </div>
 
-      {filtered.length > 0 ? (
+      {isLoading ? (
+        <p className="text-muted-foreground text-center py-12">Carregando...</p>
+      ) : filtered.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map(activity => (
             <ActivityCard key={activity.id} activity={activity} />

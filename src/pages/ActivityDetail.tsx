@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useData } from '@/contexts/DataContext';
+import { useActivity, getEffectiveStatus } from '@/hooks/useActivities';
+import { useIsUserRegistered, useRegisterForActivity } from '@/hooks/useRegistrations';
 import { useAuth } from '@/contexts/AuthContext';
 import { StatusBadge, TypeBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -12,10 +13,15 @@ import { toast } from '@/hooks/use-toast';
 export default function ActivityDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { activities, getEffectiveStatus, registerForActivity, isUserRegistered } = useData();
+  const { data: activity, isLoading } = useActivity(id);
   const { user } = useAuth();
+  const { data: isRegistered = false } = useIsUserRegistered(id);
+  const registerMutation = useRegisterForActivity();
 
-  const activity = activities.find(a => a.id === id);
+  if (isLoading) {
+    return <div className="container mx-auto px-4 py-16 text-center"><p className="text-muted-foreground">Carregando...</p></div>;
+  }
+
   if (!activity) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -26,21 +32,24 @@ export default function ActivityDetail() {
   }
 
   const status = getEffectiveStatus(activity);
-  const isRegistered = user ? isUserRegistered(activity.id, user.id) : false;
   const canRegister = status === 'aberta' && !isRegistered && !!user;
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!user) {
       toast({ title: 'Faça login', description: 'Você precisa estar logada para se inscrever.', variant: 'destructive' });
       navigate('/login');
       return;
     }
-    const result = registerForActivity(activity.id, user.id);
-    toast({
-      title: result.success ? 'Sucesso!' : 'Erro',
-      description: result.message,
-      variant: result.success ? 'default' : 'destructive',
-    });
+    try {
+      const result = await registerMutation.mutateAsync({ activityId: activity.id, userId: user.id });
+      toast({
+        title: result.success ? 'Sucesso!' : 'Erro',
+        description: result.message,
+        variant: result.success ? 'default' : 'destructive',
+      });
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message || 'Erro ao inscrever.', variant: 'destructive' });
+    }
   };
 
   const getButtonState = () => {
@@ -112,12 +121,12 @@ export default function ActivityDetail() {
                 <Button
                   className="w-full gap-2"
                   size="lg"
-                  disabled={btn.disabled}
+                  disabled={btn.disabled || registerMutation.isPending}
                   onClick={handleRegister}
                   variant={isRegistered ? 'outline' : 'default'}
                 >
                   {isRegistered && <CheckCircle2 className="h-4 w-4" />}
-                  {btn.label}
+                  {registerMutation.isPending ? 'Inscrevendo...' : btn.label}
                 </Button>
               </div>
             </CardContent>

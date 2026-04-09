@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ActivityCard } from '@/components/ActivityCard';
-import { useData } from '@/contexts/DataContext';
+import { useActivities, getEffectiveStatus } from '@/hooks/useActivities';
 import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, Users, Sparkles } from 'lucide-react';
 
 export default function Home() {
-  const { activities, getEffectiveStatus } = useData();
+  const { data: activities = [], isLoading } = useActivities();
   const upcomingActivities = activities
     .filter(a => getEffectiveStatus(a) === 'aberta')
     .slice(0, 3);
@@ -85,7 +85,9 @@ export default function Home() {
               </Button>
             </Link>
           </div>
-          {upcomingActivities.length > 0 ? (
+          {isLoading ? (
+            <p className="text-muted-foreground text-center py-12">Carregando atividades...</p>
+          ) : upcomingActivities.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {upcomingActivities.map(activity => (
                 <ActivityCard key={activity.id} activity={activity} />

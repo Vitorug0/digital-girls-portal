@@ -1,5 +1,5 @@
 import { Activity } from '@/types';
-import { useData } from '@/contexts/DataContext';
+import { getEffectiveStatus } from '@/hooks/useActivities';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { StatusBadge, TypeBadge } from '@/components/StatusBadge';
 import { Calendar, MapPin, Users } from 'lucide-react';
@@ -13,7 +13,6 @@ interface ActivityCardProps {
 }
 
 export function ActivityCard({ activity }: ActivityCardProps) {
-  const { getEffectiveStatus } = useData();
   const status = getEffectiveStatus(activity);
   const isClosed = status === 'encerrada' || status === 'cancelada';
 

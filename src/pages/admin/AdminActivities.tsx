@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useData } from '@/contexts/DataContext';
+import { useActivities, useCreateActivity, useUpdateActivity, useDeleteActivity, getEffectiveStatus } from '@/hooks/useActivities';
 import { Activity, ActivityType, ActivityStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +30,10 @@ interface FormData {
 
 export default function AdminActivities() {
   const { user, isAdmin } = useAuth();
-  const { activities, addActivity, updateActivity, deleteActivity, getEffectiveStatus } = useData();
+  const { data: activities = [] } = useActivities();
+  const createMutation = useCreateActivity();
+  const updateMutation = useUpdateActivity();
+  const deleteMutation = useDeleteActivity();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Activity | null>(null);
   const [form, setForm] = useState<FormData>({
@@ -59,25 +62,33 @@ export default function AdminActivities() {
     setDialogOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.total_slots < 1) {
       toast({ title: 'Erro', description: 'A atividade deve ter pelo menos 1 vaga.', variant: 'destructive' });
       return;
     }
-    if (editing) {
-      updateActivity(editing.id, form);
-      toast({ title: 'Atualizada!', description: 'Atividade atualizada com sucesso.' });
-    } else {
-      addActivity({ ...form, available_slots: form.total_slots });
-      toast({ title: 'Criada!', description: 'Atividade criada com sucesso.' });
+    try {
+      if (editing) {
+        await updateMutation.mutateAsync({ id: editing.id, updates: form });
+        toast({ title: 'Atualizada!', description: 'Atividade atualizada com sucesso.' });
+      } else {
+        await createMutation.mutateAsync({ ...form, available_slots: form.total_slots });
+        toast({ title: 'Criada!', description: 'Atividade criada com sucesso.' });
+      }
+      setDialogOpen(false);
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
     }
-    setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    deleteActivity(id);
-    toast({ title: 'Excluída', description: 'Atividade removida.' });
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+      toast({ title: 'Excluída', description: 'Atividade removida.' });
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+    }
   };
 
   return (
@@ -152,7 +163,9 @@ export default function AdminActivities() {
                   </div>
                 )}
               </div>
-              <Button type="submit" className="w-full">{editing ? 'Salvar Alterações' : 'Criar Atividade'}</Button>
+              <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending}>
+                {editing ? 'Salvar Alterações' : 'Criar Atividade'}
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -191,7 +204,7 @@ export default function AdminActivities() {
                         <Button variant="ghost" size="icon" onClick={() => openEdit(a)} title="Editar">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(a.id)} title="Excluir" className="text-destructive hover:text-destructive">
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(a.id)} title="Excluir" className="text-destructive hover:text-destructive" disabled={deleteMutation.isPending}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

@@ -10,17 +10,20 @@ import { toast } from '@/hooks/use-toast';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, isLoading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(email, password);
-    if (success) {
+    setLoading(true);
+    const result = await login(email, password);
+    setLoading(false);
+    if (result.success) {
       toast({ title: 'Bem-vinda!', description: 'Login realizado com sucesso.' });
       navigate('/');
     } else {
-      toast({ title: 'Erro', description: 'Email ou senha incorretos.', variant: 'destructive' });
+      toast({ title: 'Erro', description: result.message, variant: 'destructive' });
     }
   };
 
@@ -41,15 +44,10 @@ export default function Login() {
               <Label htmlFor="password">Senha</Label>
               <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Entrando...' : 'Entrar'}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            <p className="mb-2">Contas de teste:</p>
-            <p><code className="text-xs bg-muted px-1 py-0.5 rounded">admin@utfpr.edu.br / admin123</code> (Admin)</p>
-            <p><code className="text-xs bg-muted px-1 py-0.5 rounded">maria@email.com / user123</code> (Externa)</p>
-          </div>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Não tem conta?{' '}
             <Link to="/cadastro" className="text-primary hover:underline">Cadastre-se</Link>
