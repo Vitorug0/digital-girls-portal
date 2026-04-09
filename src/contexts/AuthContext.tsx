@@ -28,20 +28,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    // Fetch profile and admin role in parallel
+    const [profileResult, roleResult] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', userId).single(),
+      supabase.from('user_roles').select('role').eq('user_id', userId).eq('role', 'admin').maybeSingle(),
+    ]);
 
-    if (data) {
+    if (profileResult.data) {
       setUser({
-        id: data.id,
-        name: data.name,
-        email: data.email,
-        user_type: data.user_type as 'externo' | 'interno',
+        id: profileResult.data.id,
+        name: profileResult.data.name,
+        email: profileResult.data.email,
+        user_type: profileResult.data.user_type as 'externo' | 'interno',
       });
-      setIsAdmin(data.user_type === 'interno');
+      setIsAdmin(!!roleResult.data);
     }
   }, []);
 
