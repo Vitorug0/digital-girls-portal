@@ -1,1 +1,1 @@
-export { default } from './Home';
+export { default } from '@/features/activities/pages/Home';
