@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Registration, Activity } from '@/types';
-import { useAuth } from '@/contexts/AuthContext';
+import { Registration, Activity } from '@/shared/types';
+import { useAuth } from '@/features/auth/context/AuthContext';
 
 export function useRegistrations(activityId: string | undefined) {
   return useQuery({

@@ -1,7 +1,7 @@
-import { Activity } from '@/types';
-import { getEffectiveStatus } from '@/hooks/useActivities';
+import { Activity } from '@/shared/types';
+import { getEffectiveStatus } from '@/features/activities/hooks/useActivities';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { StatusBadge, TypeBadge } from '@/components/StatusBadge';
+import { StatusBadge, TypeBadge } from '@/shared/components/StatusBadge';
 import { Calendar, MapPin, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

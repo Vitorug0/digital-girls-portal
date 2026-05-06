@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
-import { useActivities } from '@/hooks/useActivities';
-import { ActivityCard } from '@/components/ActivityCard';
+import { useActivities } from '@/features/activities/hooks/useActivities';
+import { ActivityCard } from '@/features/activities/components/ActivityCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
-import { ActivityType } from '@/types';
+import { ActivityType } from '@/shared/types';
 
 const typeFilters: { label: string; value: ActivityType | 'all' }[] = [
   { label: 'Todas', value: 'all' },

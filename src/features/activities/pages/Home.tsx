@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ActivityCard } from '@/components/ActivityCard';
-import { useActivities, getEffectiveStatus } from '@/hooks/useActivities';
+import { ActivityCard } from '@/features/activities/components/ActivityCard';
+import { useActivities, getEffectiveStatus } from '@/features/activities/hooks/useActivities';
 import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, Users, Sparkles } from 'lucide-react';
 

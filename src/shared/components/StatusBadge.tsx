@@ -1,4 +1,4 @@
-import { ActivityStatus } from '@/types';
+import { ActivityStatus } from '@/shared/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 

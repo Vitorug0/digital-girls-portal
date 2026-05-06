@@ -1,5 +1,5 @@
-import { useAuth } from '@/contexts/AuthContext';
-import { useActivities } from '@/hooks/useActivities';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { useActivities } from '@/features/activities/hooks/useActivities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigate } from 'react-router-dom';
 import { BarChart3, BookOpen, Users, TrendingUp } from 'lucide-react';

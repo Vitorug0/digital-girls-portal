@@ -1,11 +1,11 @@
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/features/auth/context/AuthContext';
 import {
   SidebarProvider, SidebarTrigger, Sidebar, SidebarContent,
   SidebarGroup, SidebarGroupLabel, SidebarGroupContent,
   SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar,
 } from '@/components/ui/sidebar';
-import { NavLink } from '@/components/NavLink';
+import { NavLink } from '@/shared/components/NavLink';
 import { LayoutDashboard, BookOpen, ArrowLeft } from 'lucide-react';
 
 const items = [

@@ -1,93 +1,128 @@
+## Reorganizar estrutura de pastas + esclarecer seguranca do .env
 
+### Parte 1 -- Sobre o .env (importante ler antes)
 
-## Migrar Portal Meninas Digitais para Supabase (fim dos dados mockados)
+O arquivo `.env` deste projeto contem APENAS chaves publicas:
+- `VITE_SUPABASE_URL` -- URL publica da API
+- `VITE_SUPABASE_PUBLISHABLE_KEY` -- a "anon key" do Supabase (publica por design)
+- `VITE_SUPABASE_PROJECT_ID` -- ID publico do projeto
 
-### O que muda
-O sistema deixa de usar dados em memória (`mockData.ts`, `AuthContext` com mock users, `DataContext` com `useState`) e passa a usar o Supabase para autenticacao real, persistencia de dados e controle de acesso via RLS.
+Tudo que comeca com `VITE_` no Vite e **embutido no JavaScript do navegador** durante o build. Mesmo que o `.env` nao estivesse no GitHub, qualquer pessoa que abrisse o site poderia ver essas chaves no DevTools. **Nao existe forma de "esconder" ou "criptografar" essas variaveis** num app frontend -- isso vale para Vite, Next.js, React, Angular, etc.
 
-### Etapa 1 -- Criar tabelas e politicas no Supabase (migration SQL)
+A seguranca real do Supabase nao vem de esconder a anon key, e sim das **politicas de RLS** (Row Level Security) que voce ja tem ativas. A anon key sozinha nao da acesso a nada que as RLS nao permitam.
 
-**Tabelas:**
-- `profiles` (id uuid PK referencing auth.users, name text, email text, user_type text default 'externo', created_at timestamptz)
-- `user_roles` (id uuid PK, user_id uuid referencing auth.users, role text default 'user', unique(user_id, role))
-- `activities` (id uuid PK default gen_random_uuid(), title text, description text, type text, start_date timestamptz, end_date timestamptz, location text, total_slots int, available_slots int, status text default 'aberta', created_by uuid referencing auth.users, created_at timestamptz)
-- `registrations` (id uuid PK default gen_random_uuid(), activity_id uuid referencing activities, user_id uuid referencing auth.users, status text default 'inscrita', created_at timestamptz default now())
+O que o **service_role_key** (esse sim secreto) faria seria perigoso -- mas ele NUNCA esta no `.env` do frontend, ele fica como secret do Supabase e so e usado em edge functions.
 
-**Trigger:** auto-create profile row on auth.users insert.
+**Acoes que farei na Parte 1:**
+1. Adicionar `.env` ao `.gitignore` (boa pratica, mesmo as chaves sendo publicas, evita commits acidentais de secrets futuros).
+2. Criar um `.env.example` documentando quais variaveis o projeto espera.
+3. Rodar o linter de seguranca do Supabase para confirmar que as RLS estao corretas (ja que e nelas que a seguranca real se apoia).
+4. Adicionar uma secao no `README.md` explicando publicamente que essas chaves sao publicas e que a seguranca esta nas RLS -- assim qualquer um vendo o repo entende.
 
-**Security definer function:** `has_role(uuid, text)` para evitar recursao em RLS.
+Se voce quiser remover o `.env` do historico do Git que ja foi enviado, isso precisa ser feito manualmente no GitHub (com `git filter-repo` ou similar) -- Lovable nao reescreve historico do Git. Mas, repito, **nao ha risco real** porque essas chaves sao publicas.
 
-**RLS policies:**
-- `profiles`: users read own; admins read all
-- `activities`: public read; admins insert/update/delete
-- `registrations`: users read/insert/delete own; admins read all per activity
-- `user_roles`: only security definer function reads
+### Parte 2 -- Reorganizacao feature-based
 
-### Etapa 2 -- Reescrever AuthContext
+Estrutura atual (bagunca):
+```
+src/
+  components/        (mistura UI + dominio)
+  contexts/AuthContext.tsx
+  hooks/             (mistura utils + dados)
+  pages/             (tudo plano: Activities, MyRegistrations, admin/*)
+  data/, types/, lib/
+```
 
-Substituir mock login/register por `supabase.auth.signInWithPassword`, `supabase.auth.signUp` e `supabase.auth.onAuthStateChange`. O campo `user_type` vem da tabela `profiles`. O `isAdmin` consulta `user_roles` via a funcao `has_role` (chamada via RPC ou query direta na tabela profiles.user_type = 'interno').
+Estrutura nova:
 
-Remover contas de teste hardcoded da pagina de Login.
+```text
+src/
+  app/                          rotas + providers raiz
+    App.tsx
+    routes.tsx
+    providers.tsx               (QueryClient, Auth, Tooltip, Toaster)
 
-### Etapa 3 -- Reescrever DataContext com hooks React Query
+  features/
+    auth/
+      context/AuthContext.tsx
+      hooks/useAuth.ts
+      pages/
+        Login.tsx
+        Register.tsx
+      components/
+        ProtectedRoute.tsx
+        AdminRoute.tsx
 
-Substituir `useState` + mock data por hooks usando `@tanstack/react-query` e o client Supabase:
+    activities/
+      hooks/useActivities.ts
+      components/
+        ActivityCard.tsx
+        StatusBadge.tsx
+      pages/
+        Activities.tsx
+        ActivityDetail.tsx
+        Home.tsx
 
-- `useActivities()` -- SELECT from activities
-- `useActivity(id)` -- SELECT single activity
-- `useCreateActivity()`, `useUpdateActivity()`, `useDeleteActivity()` -- mutations
-- `useRegistrations(activityId)` -- SELECT registrations for an activity (admin)
-- `useUserRegistrations()` -- SELECT registrations for current user joined with activities
-- `useRegisterForActivity()` -- INSERT registration + decrement available_slots (via DB function or transaction)
-- `useCancelRegistration()` -- UPDATE registration status + increment available_slots
-- `useUpdateRegistrationStatus()` -- UPDATE registration status (presence)
+    registrations/
+      hooks/useRegistrations.ts
+      pages/
+        MyRegistrations.tsx
 
-A logica de controle de vagas (decremento/incremento atomico) sera feita via uma **database function** `register_for_activity(p_activity_id, p_user_id)` que valida vagas, duplicatas, status, e faz o INSERT + UPDATE atomicamente. Outra funcao `cancel_registration(p_registration_id)` faz o cancelamento + liberacao de vaga.
+    admin/
+      layouts/AdminLayout.tsx
+      pages/
+        Dashboard.tsx
+        AdminActivities.tsx
+        AdminRegistrations.tsx
 
-### Etapa 4 -- Atualizar todas as paginas
+    profile/
+      pages/Profile.tsx
 
-Cada pagina que hoje usa `useData()` passara a usar os hooks React Query:
-- **Home, Activities, ActivityDetail** -- `useActivities()` / `useActivity(id)`
-- **MyRegistrations** -- `useUserRegistrations()`
-- **AdminDashboard** -- `useActivities()` + `useRegistrations()`
-- **AdminActivities** -- mutations de CRUD
-- **AdminRegistrations** -- `useRegistrations(activityId)` + `useUpdateRegistrationStatus()`
-- **Login/Register** -- Supabase Auth direto
-- **Profile** -- dados de `profiles`
+  shared/
+    components/
+      Navbar.tsx
+      NavLink.tsx
+      ui/                       (shadcn -- mantem todo aqui)
+    hooks/
+      use-mobile.tsx
+      use-toast.ts
+    lib/
+      utils.ts
+    types/
+      index.ts
 
-### Etapa 5 -- Seed de dados iniciais
+  integrations/
+    supabase/                   (gerado, nao mexer)
 
-Inserir as 6 atividades de exemplo e criar um usuario admin de teste via Supabase Auth + insert em `user_roles`.
+  pages/
+    NotFound.tsx                (paginas "soltas" que nao pertencem a uma feature)
+    Index.tsx
 
-### Etapa 6 -- Limpar codigo morto
+  main.tsx
+  index.css
+  App.css
+```
 
-Remover `src/data/mockData.ts`, simplificar `DataContext` (ou remove-lo totalmente em favor dos hooks), remover mock users do `AuthContext`.
+### Como sera feito
 
----
+1. **Criar a nova estrutura** movendo os arquivos para `features/*` e `shared/*`.
+2. **Atualizar todos os imports** em cada arquivo movido. Como usamos o alias `@/`, na maior parte dos casos basta trocar `@/components/ActivityCard` por `@/features/activities/components/ActivityCard`, etc.
+3. **Extrair providers** de `App.tsx` para `app/providers.tsx` e rotas para `app/routes.tsx`, deixando o `App.tsx` fino.
+4. **Mover** `AdminLayout`, `AuthContext`, hooks de dados (`useActivities`, `useRegistrations`) para suas features.
+5. **Manter `src/integrations/supabase/`** intocado (e gerado pelo Lovable).
+6. **Manter `src/components/ui/`** dentro de `shared/components/ui/` (ou alternativamente deixar em `src/components/ui` se preferir nao mexer no shadcn -- recomendo manter o caminho original do shadcn para nao quebrar futuras adicoes via CLI). **Decisao:** vou manter `src/components/ui/` no lugar original e atualizar apenas `components.json` se necessario, para nao quebrar o shadcn.
 
-### Detalhes tecnicos
+Ajuste final entao: `shared/components/ui/` **nao** sera usado; `ui/` continua em `src/components/ui/`. O resto dos componentes compartilhados vai para `src/shared/components/`.
 
-**Database functions (PL/pgSQL):**
+### Arquivos afetados
 
-1. `register_for_activity(p_activity_id uuid, p_user_id uuid)` -- retorna JSON com success/message. Verifica status, vagas, duplicata dentro de uma transacao. Faz INSERT em registrations e UPDATE available_slots.
+- Movimentacao: ~20 arquivos para novos caminhos
+- Imports atualizados: `App.tsx`, `main.tsx`, todas as pages, todos os componentes que se referenciam
+- Novos: `src/app/providers.tsx`, `src/app/routes.tsx`, `.env.example`, atualizacao de `.gitignore` e `README.md`
+- Sem mudancas: `src/integrations/supabase/*`, `src/components/ui/*`, banco de dados, RLS, edge functions
 
-2. `cancel_registration(p_registration_id uuid, p_user_id uuid)` -- verifica ownership, atualiza status para 'cancelada', incrementa available_slots.
+### O que nao muda
 
-3. `has_role(p_user_id uuid, p_role text)` -- security definer, consulta user_roles.
-
-4. `handle_new_user()` -- trigger function que insere em profiles ao criar usuario.
-
-**Arquivos novos:**
-- `src/hooks/useActivities.ts` -- queries e mutations de activities
-- `src/hooks/useRegistrations.ts` -- queries e mutations de registrations  
-- `src/hooks/useAuth.ts` -- wrapper do Supabase Auth com profile data
-
-**Arquivos modificados:**
-- `src/contexts/AuthContext.tsx` -- reescrito para Supabase Auth
-- `src/pages/*` -- todos atualizados para usar os novos hooks
-- `src/types/index.ts` -- IDs passam a ser `string` (uuid), sem mudanca de interface
-
-**Arquivos removidos:**
-- `src/data/mockData.ts`
-- `src/contexts/DataContext.tsx` (substituido pelos hooks)
-
+- Nenhuma logica de negocio, nenhum schema de banco, nenhuma RLS.
+- Comportamento da aplicacao identico apos o refactor.
+- PWA (`manifest.json`, icones) intocado.

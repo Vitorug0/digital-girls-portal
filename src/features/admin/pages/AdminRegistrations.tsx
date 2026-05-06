@@ -1,10 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useActivity } from '@/hooks/useActivities';
-import { useRegistrations, useUpdateRegistrationStatus } from '@/hooks/useRegistrations';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { useActivity } from '@/features/activities/hooks/useActivities';
+import { useRegistrations, useUpdateRegistrationStatus } from '@/features/registrations/hooks/useRegistrations';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { RegistrationStatusBadge } from '@/components/StatusBadge';
+import { RegistrationStatusBadge } from '@/shared/components/StatusBadge';
 import { toast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
 import { ArrowLeft, Check } from 'lucide-react';
