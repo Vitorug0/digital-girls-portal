@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useActivities, useCreateActivity, useUpdateActivity, useDeleteActivity, getEffectiveStatus } from '@/hooks/useActivities';
-import { Activity, ActivityType, ActivityStatus } from '@/types';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { useActivities, useCreateActivity, useUpdateActivity, useDeleteActivity, getEffectiveStatus } from '@/features/activities/hooks/useActivities';
+import { Activity, ActivityType, ActivityStatus } from '@/shared/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { StatusBadge, TypeBadge } from '@/components/StatusBadge';
+import { StatusBadge, TypeBadge } from '@/shared/components/StatusBadge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { Navigate, Link } from 'react-router-dom';

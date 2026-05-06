@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useActivity, getEffectiveStatus } from '@/hooks/useActivities';
-import { useIsUserRegistered, useRegisterForActivity } from '@/hooks/useRegistrations';
-import { useAuth } from '@/contexts/AuthContext';
-import { StatusBadge, TypeBadge } from '@/components/StatusBadge';
+import { useActivity, getEffectiveStatus } from '@/features/activities/hooks/useActivities';
+import { useIsUserRegistered, useRegisterForActivity } from '@/features/registrations/hooks/useRegistrations';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { StatusBadge, TypeBadge } from '@/shared/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Clock, MapPin, Users, ArrowLeft, CheckCircle2 } from 'lucide-react';

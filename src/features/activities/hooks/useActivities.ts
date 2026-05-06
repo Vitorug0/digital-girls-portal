@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Activity } from '@/types';
+import { Activity } from '@/shared/types';
 
 function mapRow(row: any): Activity {
   return {

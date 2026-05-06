@@ -1,9 +1,9 @@
-import { useAuth } from '@/contexts/AuthContext';
-import { useUserRegistrations, useCancelRegistration } from '@/hooks/useRegistrations';
-import { getEffectiveStatus } from '@/hooks/useActivities';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { useUserRegistrations, useCancelRegistration } from '@/features/registrations/hooks/useRegistrations';
+import { getEffectiveStatus } from '@/features/activities/hooks/useActivities';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { StatusBadge, TypeBadge, RegistrationStatusBadge } from '@/components/StatusBadge';
+import { StatusBadge, TypeBadge, RegistrationStatusBadge } from '@/shared/components/StatusBadge';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
